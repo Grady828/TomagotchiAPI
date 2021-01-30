@@ -48,7 +48,8 @@ namespace TomagotchiAPI.Controllers
         public async Task<ActionResult<Pet>> GetPet(int id)
         {
             // Find the pet in the database using `FindAsync` to look it up by id
-            var pet = await _context.Pets.FindAsync(id);
+            var pet = await _context.Pets.Include(p => p.Playtimes).Include(f => f.Feedings).Include(s => s.Scoldings).Where(w => w.Id == id).ToListAsync();
+            ;
 
             // If we didn't find anything, we receive a `null` in return
             if (pet == null)
@@ -58,7 +59,7 @@ namespace TomagotchiAPI.Controllers
             }
 
             // Return the pet as a JSON object.
-            return pet;
+            return pet[0];
         }
 
         // PUT: api/Pets/5
@@ -165,6 +166,102 @@ namespace TomagotchiAPI.Controllers
         private bool PetExists(int id)
         {
             return _context.Pets.Any(pet => pet.Id == id);
+        }
+        [HttpPost("{id}/Playtimes")]
+        public async Task<ActionResult<Playtime>> CreatePlaytimeForPet(int id)
+        //                                       |       |
+        //                                       |       Player deserialized from JSON from the body
+        //                                       |
+        //                                                             Game ID comes from the URL
+        {
+            // First, lets find the game (by using the ID)
+            var pet = await _context.Pets.FindAsync(id);
+            // If the game doesn't exist: return a 404 Not found.
+            if (pet == null)
+            {
+                // Return a `404` response to the client indicating we could not find a game with this id
+                return NotFound();
+            }
+
+            // Associate the player to the given game.
+            pet.HappinessLevel += 5;
+            pet.HungerLevel += 3;
+            var playtime = new Playtime();
+            playtime.When = DateTime.Now;
+            playtime.PetId = pet.Id;
+
+
+
+            // Add the player to the database
+            _context.Playtimes.Add(playtime);
+            await _context.SaveChangesAsync();
+
+            // Return the new player to the response of the API
+            return Ok(playtime);
+
+        }
+        [HttpPost("{id}/Feedings")]
+        public async Task<ActionResult<Feeding>> CreateFeedingsForPet(int id)
+        //                                       |       |
+        //                                       |       Player deserialized from JSON from the body
+        //                                       |
+        //                                                             Game ID comes from the URL
+        {
+            // First, lets find the game (by using the ID)
+            var pet = await _context.Pets.FindAsync(id);
+            // If the game doesn't exist: return a 404 Not found.
+            if (pet == null)
+            {
+                // Return a `404` response to the client indicating we could not find a game with this id
+                return NotFound();
+            }
+
+            // Associate the player to the given game.
+            pet.HappinessLevel += 3;
+            pet.HungerLevel -= 5;
+            var feeding = new Feeding();
+            feeding.When = DateTime.Now;
+            feeding.PetId = pet.Id;
+
+
+
+            // Add the player to the database
+            _context.Feedings.Add(feeding);
+            await _context.SaveChangesAsync();
+
+            // Return the new player to the response of the API
+            return Ok(feeding);
+        }
+        [HttpPost("{id}/Scoldings")]
+        public async Task<ActionResult<Feeding>> CreateScoldingForPet(int id)
+        //                                       |       |
+        //                                       |       Player deserialized from JSON from the body
+        //                                       |
+        //                                                             Game ID comes from the URL
+        {
+            // First, lets find the game (by using the ID)
+            var pet = await _context.Pets.FindAsync(id);
+            // If the game doesn't exist: return a 404 Not found.
+            if (pet == null)
+            {
+                // Return a `404` response to the client indicating we could not find a game with this id
+                return NotFound();
+            }
+
+            // Associate the player to the given game.
+            pet.HappinessLevel -= 5;
+            var scolding = new Scolding();
+            scolding.When = DateTime.Now;
+            scolding.PetId = pet.Id;
+
+
+
+            // Add the player to the database
+            _context.Scoldings.Add(scolding);
+            await _context.SaveChangesAsync();
+
+            // Return the new player to the response of the API
+            return Ok(scolding);
         }
     }
 }

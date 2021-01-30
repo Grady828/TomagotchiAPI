@@ -15,6 +15,7 @@ namespace TomagotchiAPI.Models
         public List<Feeding> Feedings { get; set; }
         public List<Scolding> Scoldings { get; set; }
 
+
     }
 
 }
